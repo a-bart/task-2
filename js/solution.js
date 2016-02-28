@@ -102,6 +102,150 @@
             }
         }
     };
+    
+    function Graph(grid) {
+        var nodes = [];
+    
+        for (var x = 0; x < grid.length; x++) {
+            nodes[x] = [];
+    
+            for (var y = 0, row = grid[x]; y < row.length; y++) {
+                nodes[x][y] = new GraphNode(x, y, row[y]);
+            }
+        }
+    
+        this.input = grid;
+        this.nodes = nodes;
+    }
+    
+    function GraphNode(x,y,type) {
+        this.data = { };
+        this.x = x;
+        this.y = y;
+        this.pos = {
+            x: x,
+            y: y
+        };
+        this.type = type;
+    }
+    
+    GraphNode.prototype.isWall = function() {
+        return this.type === WALL;
+    };
+    
+    var astar = {
+        init: function(grid) {
+            for(var x = 0, xl = grid.length; x < xl; x++) {
+                for(var y = 0, yl = grid[x].length; y < yl; y++) {
+                    var node = grid[x][y];
+                    node.f = 0;
+                    node.g = 0;
+                    node.h = 0;
+                    node.cost = node.type;
+                    node.visited = false;
+                    node.closed = false;
+                    node.parent = null;
+                }
+            }
+        },
+        heap: function() {
+            return new BinaryHeap(function(node) {
+                return node.f;
+            });
+        },
+        search: function(grid, start, end) {
+            astar.init(grid);
+            heuristic = astar.manhattan;
+    
+            var openHeap = astar.heap();
+    
+            openHeap.push(start);
+    
+            while(openHeap.size() > 0) {
+    
+                var currentNode = openHeap.pop();
+    
+                if(currentNode === end) {
+                    var curr = currentNode;
+                    var ret = [];
+                    var in_ret = [];
+                    while(curr.parent) {
+                        in_ret = [];
+                        in_ret.push(curr.y,curr.x);
+                        ret.push(in_ret);
+                        curr = curr.parent;
+                    }
+                    in_ret = [];
+                    in_ret.push(start.y, start.x);               
+                    ret.push(in_ret);
+                    return ret.reverse();
+                }
+    
+                currentNode.closed = true;
+    
+                var neighbors = astar.neighbors(grid, currentNode);
+    
+                for(var i=0, il = neighbors.length; i < il; i++) {
+                    var neighbor = neighbors[i];
+    
+                    if(neighbor.closed || neighbor.isWall()) {
+                        // Not a valid node to process, skip to next neighbor.
+                        continue;
+                    }
+    
+                    var gScore = currentNode.g + neighbor.cost;
+                    var beenVisited = neighbor.visited;
+    
+                    if(!beenVisited || gScore < neighbor.g) {
+    
+                        neighbor.visited = true;
+                        neighbor.parent = currentNode;
+                        neighbor.h = neighbor.h || heuristic(neighbor.pos, end.pos);
+                        neighbor.g = gScore;
+                        neighbor.f = neighbor.g + neighbor.h;
+    
+                        if (!beenVisited) {
+                            openHeap.push(neighbor);
+                        }
+                        else {
+                            openHeap.rescoreElement(neighbor);
+                        }
+                    }
+                }
+            }
+    
+            return [];
+        },
+        manhattan: function(pos0, pos1) {
+    
+            var d1 = Math.abs (pos1.x - pos0.x);
+            var d2 = Math.abs (pos1.y - pos0.y);
+            return d1 + d2;
+        },
+        neighbors: function(grid, node) {
+            var ret = [];
+            var x = node.x;
+            var y = node.y;
+    
+            if(grid[x-1] && grid[x-1][y]) {
+                ret.push(grid[x-1][y]);
+            }
+    
+            if(grid[x+1] && grid[x+1][y]) {
+                ret.push(grid[x+1][y]);
+            }
+    
+            if(grid[x] && grid[x][y-1]) {
+                ret.push(grid[x][y-1]);
+            }
+    
+            if(grid[x] && grid[x][y+1]) {
+                ret.push(grid[x][y+1]);
+            }
+    
+            return ret;
+        }
+    };
 
     /**
      * Функция находит путь к выходу и возвращает найденный маршрут
