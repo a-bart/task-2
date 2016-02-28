@@ -246,6 +246,20 @@
             return ret;
         }
     };
+    
+    function SearchClosestFinish(Data, maze){
+      var size = maze[Data[0].y][Data[0].x];
+      for (var i = 0; i < Data.length; i++) {
+      if(maze[Data[i].y][Data[i].x]<=size){
+            size = maze[Data[i].y][Data[i].x];
+            Data.x = Data[i].x;
+            Data.y = Data[i].y;
+      }
+      delete Data[i]; 
+      };
+      return Data;
+
+    }
 
     /**
      * Функция находит путь к выходу и возвращает найденный маршрут
@@ -256,11 +270,24 @@
      * @returns {[number, number][]} маршрут к выходу представленный списоком пар координат
      */
     function solution(maze, x, y) {
-        // todo: построить правильный маршрут к выходу
-        return [
-            [1, 0],
-            [1, 1]
-        ];
+    var graph = new Graph(maze);
+      var start = graph.nodes[y][x],
+      finish = [],
+      index = 0;
+      var route = [];
+
+      for (var i = 0; i < maze[maze.length-1].length; i++) {              
+            if (maze[maze.length-1][i]===0) {
+                finish[index] = {x: i, y: maze.length-1};
+                index++;
+            }   
+      }
+
+      SearchClosestFinish(finish, maze);
+      var end = graph.nodes[finish.y][finish.x];
+      route = astar.search(graph.nodes, start, end);
+
+      return route;
     }
 
     root.maze.solution = solution;
